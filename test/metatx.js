@@ -1,4 +1,4 @@
-const { executeMessageHash } = require('@rocksideio/rockside-wallet-sdk'); 
+const { executeMessageHash } = require('@rocksideio/rockside-wallet-sdk');
 const ethUtil = require('ethereumjs-util');
 
 const { structHash } = require('./eip712');
@@ -10,13 +10,18 @@ async function hashMetaTx(forwarder, signer, { to, data, nonce }) {
     verifyingContract: forwarder.address,
   };
 
-  return executeMessageHash(domain, { signer: signer.address, to, data, nonce });
+  return executeMessageHash(domain, {
+    signer: signer.address,
+    to,
+    data,
+    nonce,
+  });
 }
 
 const twoExp128 = 1n ** 128n;
 
 function computeNonce(channel, channelNonce) {
-    return (BigInt(channel) * twoExp128 + BigInt(channelNonce)).toString();
+  return (BigInt(channel) * twoExp128 + BigInt(channelNonce)).toString();
 }
 
 async function getNonce(forwarder, signer, channel = 0) {

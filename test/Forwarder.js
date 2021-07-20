@@ -1,14 +1,14 @@
 const ethUtil = require('ethereumjs-util');
 const abi = require('ethereumjs-abi');
 
-const AuthorizedRelayers = artifacts.require("AuthorizedRelayers");
-const Forwarder = artifacts.require("Forwarder");
-const SmartWallet = artifacts.require("SmartWallet");
+const AuthorizedRelayers = artifacts.require('AuthorizedRelayers');
+const Forwarder = artifacts.require('Forwarder');
+const SmartWallet = artifacts.require('SmartWallet');
 
 contract('Forwarder contract', (accounts) => {
   const RELAYER = accounts[0];
 
-  let EOAs = []
+  let EOAs = [];
   let smartWalletContract;
   let forwarderContract;
 
@@ -16,9 +16,19 @@ contract('Forwarder contract', (accounts) => {
     for (var i = 0; i < 5; i++) {
       EOAs[i] = web3.eth.accounts.create();
     }
-    authorizedRelayersContract = await AuthorizedRelayers.new([RELAYER], { from: RELAYER });
-    forwarderContract = await Forwarder.new(authorizedRelayersContract.address, [], { from: RELAYER });
-    smartWalletContract = await SmartWallet.new(EOAs[0].address, forwarderContract.address, { from: RELAYER });
+    authorizedRelayersContract = await AuthorizedRelayers.new([RELAYER], {
+      from: RELAYER,
+    });
+    forwarderContract = await Forwarder.new(
+      authorizedRelayersContract.address,
+      [],
+      { from: RELAYER },
+    );
+    smartWalletContract = await SmartWallet.new(
+      EOAs[0].address,
+      forwarderContract.address,
+      { from: RELAYER },
+    );
 
     await web3.eth.sendTransaction({
       from: accounts[0],
@@ -37,7 +47,9 @@ contract('Forwarder contract', (accounts) => {
 
     const metatx = {
       destination: smartWalletContract.address,
-      data: smartWalletContract.contract.methods.execute('0x0000000000000000000000000000000000000000', '0x0', '0x').encodeABI(),
+      data: smartWalletContract.contract.methods
+        .execute('0x0000000000000000000000000000000000000000', '0x0', '0x')
+        .encodeABI(),
       gasPrice: 1,
       nonce: await getNonceForChannel(signer.address, 0),
     };
@@ -57,10 +69,13 @@ contract('Forwarder contract', (accounts) => {
     */
 
     const res = await forwarderContract.forward(
-      signature, signer.address, metatx.destination,
-      metatx.data, metatx.gasPrice,
+      signature,
+      signer.address,
+      metatx.destination,
+      metatx.data,
+      metatx.gasPrice,
       metatx.nonce,
-      { from: RELAYER }
+      { from: RELAYER },
     );
   });
 
@@ -69,9 +84,15 @@ contract('Forwarder contract', (accounts) => {
 
     const futurMetatx = {
       destination: smartWalletContract.address,
-      data: smartWalletContract.contract.methods.execute('0x0000000000000000000000000000000000000000', '0x0', '0x').encodeABI(),
+      data: smartWalletContract.contract.methods
+        .execute('0x0000000000000000000000000000000000000000', '0x0', '0x')
+        .encodeABI(),
       gasPrice: 1,
-      nonce: '0x' + (new Number(await getNonceForChannel(signer.address, 0)) + 1).toString(16),
+      nonce:
+        '0x' +
+        (new Number(await getNonceForChannel(signer.address, 0)) + 1).toString(
+          16,
+        ),
     };
 
     const futurSignature = await signMetaTx({
@@ -80,15 +101,22 @@ contract('Forwarder contract', (accounts) => {
       relayer: RELAYER,
     });
 
-    const estimation = await forwarderContract.contract.methods.estimateForward(
-      futurSignature, signer.address, futurMetatx.destination,
-      futurMetatx.data, futurMetatx.gasPrice,
-      futurMetatx.nonce
-    ).estimateGas({ from: forwarderContract.address, gasPrice: 10 })
+    const estimation = await forwarderContract.contract.methods
+      .estimateForward(
+        futurSignature,
+        signer.address,
+        futurMetatx.destination,
+        futurMetatx.data,
+        futurMetatx.gasPrice,
+        futurMetatx.nonce,
+      )
+      .estimateGas({ from: forwarderContract.address, gasPrice: 10 });
 
     const metatx = {
       destination: smartWalletContract.address,
-      data: smartWalletContract.contract.methods.execute('0x0000000000000000000000000000000000000000', '0x0', '0x').encodeABI(),
+      data: smartWalletContract.contract.methods
+        .execute('0x0000000000000000000000000000000000000000', '0x0', '0x')
+        .encodeABI(),
       gasPrice: 1,
       nonce: await getNonceForChannel(signer.address, 0),
     };
@@ -100,17 +128,23 @@ contract('Forwarder contract', (accounts) => {
     });
 
     const res1 = await forwarderContract.forward(
-      signature, signer.address, metatx.destination,
-      metatx.data, metatx.gasPrice,
+      signature,
+      signer.address,
+      metatx.destination,
+      metatx.data,
+      metatx.gasPrice,
       metatx.nonce,
-      { from: RELAYER }
+      { from: RELAYER },
     );
 
     const res2 = await forwarderContract.forward(
-      futurSignature, signer.address, futurMetatx.destination,
-      futurMetatx.data, futurMetatx.gasPrice,
+      futurSignature,
+      signer.address,
+      futurMetatx.destination,
+      futurMetatx.data,
+      futurMetatx.gasPrice,
       futurMetatx.nonce,
-      { from: RELAYER }
+      { from: RELAYER },
     );
 
     assert.ok(estimation + 10000 > res2.receipt.cumulativeGasUsed);
@@ -121,7 +155,9 @@ contract('Forwarder contract', (accounts) => {
 
     const metatx = {
       destination: smartWalletContract.address,
-      data: smartWalletContract.contract.methods.execute('0x0000000000000000000000000000000000000000', '0x0', '0x').encodeABI(),
+      data: smartWalletContract.contract.methods
+        .execute('0x0000000000000000000000000000000000000000', '0x0', '0x')
+        .encodeABI(),
       gasPrice: 1,
       nonce: await getNonceForChannel(signer.address, 0),
     };
@@ -134,10 +170,13 @@ contract('Forwarder contract', (accounts) => {
 
     try {
       await forwarderContract.forward(
-        signature, signer.address, metatx.destination,
-        metatx.data, metatx.gasPrice,
+        signature,
+        signer.address,
+        metatx.destination,
+        metatx.data,
+        metatx.gasPrice,
         metatx.nonce,
-        { from: RELAYER }
+        { from: RELAYER },
       );
       assert.isTrue(false);
     } catch (e) {
@@ -149,14 +188,19 @@ contract('Forwarder contract', (accounts) => {
     }
   });
 
-
   it('should not allow invalid destination', async () => {
-    const forwarderContract = await Forwarder.new(authorizedRelayersContract.address, ['0x0000000000000000000000000000000000000001'], { from: RELAYER });
+    const forwarderContract = await Forwarder.new(
+      authorizedRelayersContract.address,
+      ['0x0000000000000000000000000000000000000001'],
+      { from: RELAYER },
+    );
     const signer = EOAs[0];
 
     const metatx = {
       destination: smartWalletContract.address,
-      data: smartWalletContract.contract.methods.execute('0x0000000000000000000000000000000000000000', '0x0', '0x').encodeABI(),
+      data: smartWalletContract.contract.methods
+        .execute('0x0000000000000000000000000000000000000000', '0x0', '0x')
+        .encodeABI(),
       gasPrice: 1,
       nonce: await getNonceForChannel(signer.address, 0),
     };
@@ -169,9 +213,13 @@ contract('Forwarder contract', (accounts) => {
 
     try {
       const res = await forwarderContract.forward(
-        signature, signer.address,
-        metatx.destination, metatx.data, metatx.gasPrice, metatx.nonce,
-        { from: RELAYER }
+        signature,
+        signer.address,
+        metatx.destination,
+        metatx.data,
+        metatx.gasPrice,
+        metatx.nonce,
+        { from: RELAYER },
       );
       assert.isTrue(false);
     } catch (e) {
@@ -184,11 +232,14 @@ contract('Forwarder contract', (accounts) => {
   });
 
   const buildSmartWalletData = ({ destination, value, data }) =>
-      abi.rawEncode(['address', 'uint256', 'bytes'], destination, value, data);
+    abi.rawEncode(['address', 'uint256', 'bytes'], destination, value, data);
 
   const signMetaTx = async ({ signer, destination, value, data, nonce }) => {
     const hash = await forwarderContract.hashTxMessage(
-      signer.address, destination, data, nonce
+      signer.address,
+      destination,
+      data,
+      nonce,
     );
 
     const chainID = await web3.eth.net.getId();
@@ -203,7 +254,7 @@ contract('Forwarder contract', (accounts) => {
         Buffer.from('1901', 'hex'),
         structHash('EIP712Domain', domain),
         hashBuf,
-      ])
+      ]),
     );
 
     const privateKey = new Buffer(signer.privateKey.substring(2), 'hex');
@@ -211,86 +262,88 @@ contract('Forwarder contract', (accounts) => {
     const signature = ethUtil.toRpcSig(sig.v, sig.r, sig.s);
 
     return signature;
-  }
+  };
 
   const getNonceForChannel = async (signer, channel) => {
-    const channelNonce = await forwarderContract.channels(signer, channel)
+    const channelNonce = await forwarderContract.channels(signer, channel);
 
-    const nonceValue = BigInt(channelNonce) + (BigInt(channel) * (2n ** 128n));
-    return '0x' + nonceValue.toString(16)
-  }
+    const nonceValue = BigInt(channelNonce) + BigInt(channel) * 2n ** 128n;
+    return '0x' + nonceValue.toString(16);
+  };
 });
 
 const types = {
   EIP712Domain: [
-    { type: "address", name: "verifyingContract" },
-    { type: "uint256", name: "chainId" }
-  ]
+    { type: 'address', name: 'verifyingContract' },
+    { type: 'uint256', name: 'chainId' },
+  ],
 };
 
 // Recursively finds all the dependencies of a type
 function dependencies(primaryType, found = []) {
-    if (found.includes(primaryType)) {
-        return found;
-    }
-    if (types[primaryType] === undefined) {
-        return found;
-    }
-    found.push(primaryType);
-    for (let field of types[primaryType]) {
-        for (let dep of dependencies(field.type, found)) {
-            if (!found.includes(dep)) {
-                found.push(dep);
-            }
-        }
-    }
+  if (found.includes(primaryType)) {
     return found;
+  }
+  if (types[primaryType] === undefined) {
+    return found;
+  }
+  found.push(primaryType);
+  for (let field of types[primaryType]) {
+    for (let dep of dependencies(field.type, found)) {
+      if (!found.includes(dep)) {
+        found.push(dep);
+      }
+    }
+  }
+  return found;
 }
 
 function encodeType(primaryType) {
-    // Get dependencies primary first, then alphabetical
-    let deps = dependencies(primaryType);
-    deps = deps.filter(t => t != primaryType);
-    deps = [primaryType].concat(deps.sort());
-    // Format as a string with fields
-    let result = '';
-    for (let type of deps) {
-        result += `${type}(${types[type].map(({ name, type }) => `${type} ${name}`).join(',')})`;
-    }
-    return result;
+  // Get dependencies primary first, then alphabetical
+  let deps = dependencies(primaryType);
+  deps = deps.filter((t) => t != primaryType);
+  deps = [primaryType].concat(deps.sort());
+  // Format as a string with fields
+  let result = '';
+  for (let type of deps) {
+    result += `${type}(${types[type]
+      .map(({ name, type }) => `${type} ${name}`)
+      .join(',')})`;
+  }
+  return result;
 }
 
 function typeHash(primaryType) {
-    return ethUtil.keccak256(encodeType(primaryType));
+  return ethUtil.keccak256(encodeType(primaryType));
 }
 
 function encodeData(primaryType, data) {
-    let encTypes = [];
-    let encValues = [];
-    // Add typehash
-    encTypes.push('bytes32');
-    encValues.push(typeHash(primaryType));
-    // Add field contents
-    for (let field of types[primaryType]) {
-        let value = data[field.name];
-        if (field.type == 'string' || field.type == 'bytes') {
-            encTypes.push('bytes32');
-            value = ethUtil.keccak256(value);
-            encValues.push(value);
-        } else if (types[field.type] !== undefined) {
-            encTypes.push('bytes32');
-            value = ethUtil.keccak256(encodeData(field.type, value));
-            encValues.push(value);
-        } else if (field.type.lastIndexOf(']') === field.type.length - 1) {
-            throw 'TODO: Arrays currently unimplemented in encodeData';
-        } else {
-            encTypes.push(field.type);
-            encValues.push(value);
-        }
+  let encTypes = [];
+  let encValues = [];
+  // Add typehash
+  encTypes.push('bytes32');
+  encValues.push(typeHash(primaryType));
+  // Add field contents
+  for (let field of types[primaryType]) {
+    let value = data[field.name];
+    if (field.type == 'string' || field.type == 'bytes') {
+      encTypes.push('bytes32');
+      value = ethUtil.keccak256(value);
+      encValues.push(value);
+    } else if (types[field.type] !== undefined) {
+      encTypes.push('bytes32');
+      value = ethUtil.keccak256(encodeData(field.type, value));
+      encValues.push(value);
+    } else if (field.type.lastIndexOf(']') === field.type.length - 1) {
+      throw 'TODO: Arrays currently unimplemented in encodeData';
+    } else {
+      encTypes.push(field.type);
+      encValues.push(value);
     }
-    return abi.rawEncode(encTypes, encValues);
+  }
+  return abi.rawEncode(encTypes, encValues);
 }
 
 function structHash(primaryType, data) {
-    return ethUtil.keccak256(encodeData(primaryType, data));
+  return ethUtil.keccak256(encodeData(primaryType, data));
 }
